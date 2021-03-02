@@ -24,6 +24,7 @@ type Config struct {
 	Bind                    string            `default:":8080" usage:"[host:port] to bind for serving HTTP"`
 	BaseUrl                 string            `usage:"External [URL] of this proxy"`
 	BackendUrl              string            `usage:"[URL] of the backend being proxied"`
+	CookieUrl               string            `usage:"Overwrites [URL] of cookie scope (defaults to base url)"`
 	IdpMetadataUrl          string            `usage:"[URL] of the IdP's metadata XML, can be a local file by specifying the file:// scheme"`
 	IdpCaPath               string            `usage:"Optional [path] to a CA certificate PEM file for the IdP"`
 	NameIdFormat            string            `usage:"One of unspecified, transient, email, or persistent to use a standard format or give a full URN of the name ID format" default:"transient"`
@@ -58,6 +59,14 @@ func Start(ctx context.Context, cfg *Config) error {
 	rootUrl, err := url.Parse(cfg.BaseUrl)
 	if err != nil {
 		return fmt.Errorf("failed to parse base URL: %w", err)
+	}
+
+	if cfg.CookieUrl == "" {
+		cfg.CookieUrl = cfg.BaseUrl
+	}
+	cookieUrl, err := url.Parse(cfg.CookieUrl)
+	if err != nil {
+		return fmt.Errorf("failed to parse cookie URL: %w", err)
 	}
 
 	httpClient, err := setupHttpClient(cfg.IdpCaPath)
@@ -105,10 +114,10 @@ func Start(ctx context.Context, cfg *Config) error {
 	// Library is still using same Options struct for all of these
 	// ...so the fields are flagged as deprecated but library
 	middleware.Session = samlsp.DefaultSessionProvider(samlsp.Options{
-		URL:          *rootUrl,
+		URL:          *cookieUrl,
 		Key:          keyPair.PrivateKey.(*rsa.PrivateKey),
 		CookieMaxAge: cfg.CookieMaxAge,
-		CookieDomain: rootUrl.Hostname(),
+		CookieDomain: cookieUrl.Hostname(),
 	})
 
 	proxy, err := NewProxy(cfg)
