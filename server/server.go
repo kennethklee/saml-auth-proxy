@@ -24,7 +24,7 @@ type Config struct {
 	Bind                    string            `default:":8080" usage:"[host:port] to bind for serving HTTP"`
 	BaseUrl                 string            `usage:"External [URL] of this proxy"`
 	BackendUrl              string            `usage:"[URL] of the backend being proxied"`
-	CookieUrl               string            `usage:"Overwrites [URL] of cookie scope (defaults to base url)"`
+	CookieDomain            string            `usage:"Domain of cookie scope (defaults to base url hostname)"`
 	IdpMetadataUrl          string            `usage:"[URL] of the IdP's metadata XML, can be a local file by specifying the file:// scheme"`
 	IdpCaPath               string            `usage:"Optional [path] to a CA certificate PEM file for the IdP"`
 	NameIdFormat            string            `usage:"One of unspecified, transient, email, or persistent to use a standard format or give a full URN of the name ID format" default:"transient"`
@@ -61,10 +61,10 @@ func Start(ctx context.Context, cfg *Config) error {
 		return fmt.Errorf("failed to parse base URL: %w", err)
 	}
 
-	if cfg.CookieUrl == "" {
-		cfg.CookieUrl = cfg.BaseUrl
+	if cfg.CookieDomain == "" {
+		cfg.CookieDomain = rootUrl.Hostname()
 	}
-	cookieUrl, err := url.Parse(cfg.CookieUrl)
+	cookieUrl, err := url.Parse(cfg.CookieDomain)
 	if err != nil {
 		return fmt.Errorf("failed to parse cookie URL: %w", err)
 	}
