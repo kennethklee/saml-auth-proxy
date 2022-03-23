@@ -98,16 +98,23 @@ func Start(ctx context.Context, cfg *Config) error {
 		middleware.ServiceProvider.AuthnNameIDFormat = saml.NameIDFormat(cfg.NameIdFormat)
 	}
 
-	// This is redundant with RequestTracker created in samlsp.New, but prepares for deprecation switch
-	middleware.RequestTracker = samlsp.DefaultRequestTracker(samlsp.Options{
-		URL: *rootUrl,
-		Key: keyPair.PrivateKey.(*rsa.PrivateKey),
-	}, &middleware.ServiceProvider)
-
 	var cookieDomain = cfg.CookieDomain
 	if cookieDomain == "" {
 		cookieDomain = rootUrl.Hostname()
 	}
+	// This is redundant with RequestTracker created in samlsp.New, but prepares for deprecation switch
+	// middleware.RequestTracker = samlsp.DefaultRequestTracker(samlsp.Options{
+	// 	URL: *rootUrl,
+	// 	Key: keyPair.PrivateKey.(*rsa.PrivateKey),
+	// }, &middleware.ServiceProvider)
+	middleware.RequestTracker = CookieRequestTracker{
+		CookieRequestTracker: samlsp.DefaultRequestTracker(samlsp.Options{
+			URL: *rootUrl,
+			Key: keyPair.PrivateKey.(*rsa.PrivateKey),
+		}, &middleware.ServiceProvider),
+		Domain: cookieDomain,
+	}
+
 	cookieSessionProvider := samlsp.DefaultSessionProvider(samlOpts)
 	cookieSessionProvider.Name = tokenCookieName
 	cookieSessionProvider.Domain = cookieDomain

@@ -4,10 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/itzg/go-flagsfiller"
-	"github.com/itzg/saml-auth-proxy/server"
 	"log"
 	"os"
+
+	"github.com/itzg/go-flagsfiller"
+	"github.com/kennethklee/saml-auth-proxy/server"
 )
 
 var (
