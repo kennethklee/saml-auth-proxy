@@ -2,8 +2,10 @@ package server
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
@@ -18,14 +20,23 @@ type CookieRequestTracker struct {
 
 // Source: https://github.com/crewjam/saml/blob/5e0ffd290abf0be7dfd4f8279e03a963071544eb/samlsp/request_tracker_cookie.go#L28-58
 // Changes:
-// - Adds host in request URI
 // - Adds CookieDomain config in http.SetCookie
+// - Adds redirectURI construction from X-Forwarded-* headers
 func (t CookieRequestTracker) TrackRequest(w http.ResponseWriter, r *http.Request, samlRequestID string) (string, error) {
-	r.URL.Host = r.Host
+	var redirectURI *url.URL
+	if r.Header.Get(HeaderForwardedHost) != "" && r.Header.Get(HeaderForwardedURI) != "" && r.Header.Get(HeaderForwardedMethod) != "" {
+		// Rebuild the redirectURI from the headers
+		// TODO check with trusted proxies first
+		redirectURI, _ = url.Parse(fmt.Sprintf("%s://%s%s", r.Header.Get(HeaderForwardedProto), r.Header.Get(HeaderForwardedHost), r.Header.Get(HeaderForwardedURI)))
+	} else {
+		redirectURI, _ = url.Parse(r.URL.String()) // Clone
+		redirectURI.Host = r.Host
+	}
+
 	trackedRequest := samlsp.TrackedRequest{
 		Index:         base64.RawURLEncoding.EncodeToString(randomBytes(42)),
 		SAMLRequestID: samlRequestID,
-		URI:           r.URL.String(),
+		URI:           redirectURI.String(),
 	}
 
 	if t.RelayStateFunc != nil {

@@ -26,6 +26,10 @@ const (
 	HeaderForwardedProto  = "X-Forwarded-Proto"
 	HeaderForwardedFor    = "X-Forwarded-For"
 	HeaderForwardedHost   = "X-Forwarded-Host"
+
+	// Added for forward_auth
+	HeaderForwardedMethod = "X-Forwarded-Method"
+	HeaderForwardedURI    = "X-Forwarded-Uri"
 )
 
 type proxy struct {
@@ -68,7 +72,6 @@ func (p *proxy) health(respOutWriter http.ResponseWriter, _ *http.Request) {
 }
 
 func (p *proxy) handler(respOutWriter http.ResponseWriter, reqIn *http.Request) {
-
 	session := samlsp.SessionFromContext(reqIn.Context())
 	sessionClaims, ok := session.(samlsp.JWTSessionClaims)
 	if !ok {
