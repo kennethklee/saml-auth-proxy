@@ -7,12 +7,13 @@ import (
 	"crypto/x509"
 	"encoding/xml"
 	"fmt"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
@@ -85,8 +86,9 @@ func Start(ctx context.Context, logger *zap.Logger, cfg *Config) error {
 			URL: *rootUrl,
 			Key: keyPair.PrivateKey.(*rsa.PrivateKey),
 		}, &middleware.ServiceProvider),
-		CookieDomain:     cookieDomain,
-		StaticRelayState: cfg.StaticRelayState,
+		CookieDomain:          cookieDomain,
+		StaticRelayState:      cfg.StaticRelayState,
+		TrustForwardedHeaders: cfg.AuthVerify,
 	}
 	cookieSessionProvider := samlsp.DefaultSessionProvider(samlOpts)
 	cookieSessionProvider.Name = cfg.CookieName
